@@ -1,5 +1,5 @@
-import {state} from "../index.mjs";
-import {handleErrorDialog} from "../components/error.mjs";
+import { state } from "../index.mjs";
+import { handleErrorDialog } from "../components/error.mjs";
 
 // === ABOUT THE STATE
 // state gives you these two functions only
@@ -20,13 +20,13 @@ async function _apiRequest(endpoint, options = {}) {
   const defaultOptions = {
     headers: {
       "Content-Type": "application/json",
-      ...(token ? {Authorization: `Bearer ${token}`} : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     mode: "cors",
     credentials: "include",
   };
 
-  const fetchOptions = {...defaultOptions, ...options};
+  const fetchOptions = { ...defaultOptions, ...options };
   const url = endpoint.startsWith("http") ? endpoint : `${baseUrl}${endpoint}`;
 
   try {
@@ -54,7 +54,7 @@ async function _apiRequest(endpoint, options = {}) {
     const contentType = response.headers.get("content-type");
     return contentType?.includes("application/json")
       ? await response.json()
-      : {success: true};
+      : { success: true };
   } catch (error) {
     if (!error.status) {
       // Only handle network errors here, response errors are handled above
@@ -70,11 +70,11 @@ function _updateProfile(username, profileData) {
   const index = profiles.findIndex((p) => p.username === username);
 
   if (index !== -1) {
-    profiles[index] = {...profiles[index], ...profileData};
+    profiles[index] = { ...profiles[index], ...profileData };
   } else {
-    profiles.push({username, ...profileData});
+    profiles.push({ username, ...profileData });
   }
-  state.updateState({profiles});
+  state.updateState({ profiles });
 }
 
 // ====== AUTH methods
@@ -82,7 +82,7 @@ async function login(username, password) {
   try {
     const data = await _apiRequest("/login", {
       method: "POST",
-      body: JSON.stringify({username, password}),
+      body: JSON.stringify({ username, password }),
     });
 
     if (data.success && data.token) {
@@ -96,7 +96,7 @@ async function login(username, password) {
 
     return data;
   } catch (error) {
-    return {success: false};
+    return { success: false };
   }
 }
 
@@ -104,12 +104,12 @@ async function getWhoToFollow() {
   try {
     const usernamesToFollow = await _apiRequest("/suggested-follows/3");
 
-    state.updateState({whoToFollow: usernamesToFollow});
+    state.updateState({ whoToFollow: usernamesToFollow });
 
     return usernamesToFollow;
   } catch (error) {
     // Error already handled by _apiRequest
-    state.updateState({usernamesToFollow: []});
+    state.updateState({ usernamesToFollow: [] });
     return [];
   }
 }
@@ -118,7 +118,7 @@ async function signup(username, password) {
   try {
     const data = await _apiRequest("/register", {
       method: "POST",
-      body: JSON.stringify({username, password}),
+      body: JSON.stringify({ username, password }),
     });
 
     if (data.success && data.token) {
@@ -132,20 +132,21 @@ async function signup(username, password) {
 
     return data;
   } catch (error) {
-    return {success: false};
+    return { success: false };
   }
 }
 
 function logout() {
   state.destroyState();
-  return {success: true};
+  window.location.hash = "/";
+  return { success: true };
 }
 
 // ===== BLOOM methods
 async function getBloom(bloomId) {
   const endpoint = `/bloom/${bloomId}`;
   const bloom = await _apiRequest(endpoint);
-  state.updateState({singleBloomToShow: bloom});
+  state.updateState({ singleBloomToShow: bloom });
   return bloom;
 }
 
@@ -156,18 +157,18 @@ async function getBlooms(username) {
     const blooms = await _apiRequest(endpoint);
 
     if (username) {
-      _updateProfile(username, {blooms});
+      _updateProfile(username, { blooms });
     } else {
-      state.updateState({timelineBlooms: blooms});
+      state.updateState({ timelineBlooms: blooms });
     }
 
     return blooms;
   } catch (error) {
     // Error already handled by _apiRequest
     if (username) {
-      _updateProfile(username, {blooms: []});
+      _updateProfile(username, { blooms: [] });
     } else {
-      state.updateState({timelineBlooms: []});
+      state.updateState({ timelineBlooms: [] });
     }
     return [];
   }
@@ -189,7 +190,7 @@ async function getBloomsByHashtag(hashtag) {
     return blooms;
   } catch (error) {
     // Error already handled by _apiRequest
-    return {success: false};
+    return { success: false };
   }
 }
 
@@ -197,7 +198,7 @@ async function postBloom(content) {
   try {
     const data = await _apiRequest("/bloom", {
       method: "POST",
-      body: JSON.stringify({content}),
+      body: JSON.stringify({ content }),
     });
 
     if (data.success) {
@@ -208,7 +209,7 @@ async function postBloom(content) {
     return data;
   } catch (error) {
     // Error already handled by _apiRequest
-    return {success: false};
+    return { success: false };
   }
 }
 
@@ -225,16 +226,16 @@ async function getProfile(username) {
       const currentUsername = profileData.username;
       const fullProfileData = await _apiRequest(`/profile/${currentUsername}`);
       _updateProfile(currentUsername, fullProfileData);
-      state.updateState({currentUser: currentUsername, isLoggedIn: true});
+      state.updateState({ currentUser: currentUsername, isLoggedIn: true });
     }
 
     return profileData;
   } catch (error) {
     // Error already handled by _apiRequest
     if (!username) {
-      state.updateState({isLoggedIn: false, currentUser: null});
+      state.updateState({ isLoggedIn: false, currentUser: null });
     }
-    return {success: false};
+    return { success: false };
   }
 }
 
@@ -242,7 +243,7 @@ async function followUser(username) {
   try {
     const data = await _apiRequest("/follow", {
       method: "POST",
-      body: JSON.stringify({follow_username: username}),
+      body: JSON.stringify({ follow_username: username }),
     });
 
     if (data.success) {
@@ -255,7 +256,7 @@ async function followUser(username) {
 
     return data;
   } catch (error) {
-    return {success: false};
+    return { success: false };
   }
 }
 
@@ -277,7 +278,7 @@ async function unfollowUser(username) {
     return data;
   } catch (error) {
     // Error already handled by _apiRequest
-    return {success: false};
+    return { success: false };
   }
 }
 
@@ -300,4 +301,4 @@ const apiService = {
   getWhoToFollow,
 };
 
-export {apiService};
+export { apiService };
