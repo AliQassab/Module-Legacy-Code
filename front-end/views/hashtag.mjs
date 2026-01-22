@@ -35,21 +35,24 @@ function hashtagView(hashtag) {
     createLogin
   );
   document
-    .querySelector("[data-action='login']")
-    ?.addEventListener("click", handleLogin);
+    .querySelector("[data-form='login']")
+    ?.addEventListener("submit", handleLogin);
 
-  renderOne(
-    state.currentHashtag,
-    getHeadingContainer(),
-    "heading-template",
-    createHeading
-  );
-  renderEach(
-    state.hashtagBlooms || [],
-    getTimelineContainer(),
-    "bloom-template",
-    createBloom
-  );
+  // Only show hashtag content if logged in
+  if (state.isLoggedIn) {
+    renderOne(
+      state.currentHashtag,
+      getHeadingContainer(),
+      "heading-template",
+      createHeading
+    );
+    renderEach(
+      state.hashtagBlooms || [],
+      getTimelineContainer(),
+      "bloom-template",
+      createBloom
+    );
+  }
 }
 
 export {hashtagView};
