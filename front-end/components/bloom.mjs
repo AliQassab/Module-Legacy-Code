@@ -1,15 +1,5 @@
-/**
- * Create a bloom component
- * @param {string} template - The ID of the template to clone
- * @param {Object} bloom - The bloom data
- * @returns {DocumentFragment} - The bloom fragment of UI, for items in the Timeline
- * btw a bloom object is composed thus
- * {"id": Number,
- * "sender": username,
- * "content": "string from textarea",
- * "sent_timestamp": "datetime as ISO 8601 formatted string"}
+import {apiService} from "../lib/api.mjs";
 
- */
 const createBloom = (template, bloom) => {
   if (!bloom) return;
   const bloomFrag = document.getElementById(template).content.cloneNode(true);
@@ -20,6 +10,10 @@ const createBloom = (template, bloom) => {
   const bloomTime = bloomFrag.querySelector("[data-time]");
   const bloomTimeLink = bloomFrag.querySelector("a:has(> [data-time])");
   const bloomContent = bloomFrag.querySelector("[data-content]");
+  const rebloomHeader = bloomFrag.querySelector("[data-rebloom-header]");
+  const rebloomIndicator = bloomFrag.querySelector("[data-rebloom-indicator]");
+  const rebloomBtn = bloomFrag.querySelector("[data-rebloom-btn]");
+  const rebloomCount = bloomFrag.querySelector("[data-rebloom-count]");
 
   bloomArticle.setAttribute("data-bloom-id", bloom.id);
   bloomUsername.setAttribute("href", `/profile/${bloom.sender}`);
@@ -31,8 +25,27 @@ const createBloom = (template, bloom) => {
       .body.childNodes
   );
 
+  if (bloom.rebloomer && bloom.original_sender) {
+    rebloomHeader.style.display = "block";
+    rebloomIndicator.textContent = `${bloom.sender} rebloomed ${bloom.original_sender}`;
+    bloomArticle.classList.add("bloom--rebloomed");
+  }
+
+  if (bloom.rebloom_count > 0) {
+    rebloomCount.style.display = "inline";
+    rebloomCount.textContent = `${bloom.rebloom_count} rebloom${bloom.rebloom_count !== 1 ? 's' : ''}`;
+  }
+
+  if (rebloomBtn) {
+    rebloomBtn.addEventListener("click", () => handleRebloom(bloom.id));
+  }
+
   return bloomFrag;
 };
+
+async function handleRebloom(bloomId) {
+  await apiService.rebloom(bloomId);
+}
 
 function _formatHashtags(text) {
   if (!text) return text;

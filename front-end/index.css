@@ -221,6 +221,40 @@ dialog {
   gap: var(--space);
 }
 
+/* BLOOM */
+.bloom {
+  position: relative;
+}
+
+.bloom--rebloomed {
+  border-left: 3px solid var(--brand);
+  padding-left: calc(var(--space) - 3px);
+}
+
+.bloom__rebloom-indicator {
+  font-size: 0.9em;
+  color: var(--accent);
+  font-style: italic;
+}
+
+.bloom__actions {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space) / 2);
+  margin-top: calc(var(--space) / 2);
+}
+
+.bloom__rebloom-btn {
+  font-size: 0.9em;
+  padding: calc(var(--space) / 4) calc(var(--space) / 2);
+}
+
+.bloom__rebloom-count {
+  font-size: 0.85em;
+  color: var(--accent);
+  font-style: italic;
+}
+
 /* states, helpers*/
 .flex {
   display: flex;
