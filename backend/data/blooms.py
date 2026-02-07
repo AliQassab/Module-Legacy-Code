@@ -189,18 +189,25 @@ def add_rebloom(*, rebloomer: User, original_bloom_id: int) -> Bloom:
         
         cur.execute("SELECT username FROM users WHERE id = %s", (original_sender_id,))
         original_sender_row = cur.fetchone()
-        original_sender_username = original_sender_row[0] if original_sender_row else None
+        if original_sender_row is None:
+            raise ValueError(f"Original sender user {original_sender_id} not found")
+        original_sender_username = original_sender_row[0]
         
-        # Return a Bloom object representing the rebloom
-        # For reblooms, we use the original bloom's data but mark it as rebloomed
+        cur.execute(
+            "SELECT COUNT(*) FROM reblooms WHERE original_bloom_id = %s",
+            (bloom_id,),
+        )
+        rebloom_count_row = cur.fetchone()
+        rebloom_count = rebloom_count_row[0] if rebloom_count_row else 0
+        
         return Bloom(
-            id=bloom_id,  # Keep original bloom ID
-            sender=rebloomer.username,  # Show rebloomer as sender in feed
+            id=bloom_id,
+            sender=rebloomer.username,
             content=content,
-            sent_timestamp=rebloom_timestamp,  # Use rebloom timestamp for feed ordering
+            sent_timestamp=rebloom_timestamp,
             original_sender=original_sender_username,
             rebloomer=rebloomer.username,
-            rebloom_count=0,  # Will be calculated separately
+            rebloom_count=rebloom_count,
         )
 
 
