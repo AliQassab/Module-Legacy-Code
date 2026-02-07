@@ -110,8 +110,12 @@ def other_profile(profile_username):
     current_user = get_current_user()
 
     followers = get_inverse_followed_usernames(profile_user)
-    all_blooms = blooms.get_blooms_for_user(profile_username)
-    all_blooms.reverse()
+    original_blooms = blooms.get_blooms_for_user(profile_username)
+    reblooms = blooms.get_reblooms_for_user(profile_username)
+    
+    all_blooms = original_blooms + reblooms
+    all_blooms.sort(key=lambda bloom: bloom.sent_timestamp, reverse=True)
+    
     return jsonify(
         {
             "username": profile_username,
@@ -246,9 +250,13 @@ def home_timeline():
 
 
 def user_blooms(profile_username):
-    user_blooms = blooms.get_blooms_for_user(profile_username)
-    user_blooms.reverse()
-    return jsonify(user_blooms)
+    original_blooms = blooms.get_blooms_for_user(profile_username)
+    reblooms = blooms.get_reblooms_for_user(profile_username)
+    
+    all_blooms = original_blooms + reblooms
+    all_blooms.sort(key=lambda bloom: bloom.sent_timestamp, reverse=True)
+    
+    return jsonify(all_blooms)
 
 
 @jwt_required()
