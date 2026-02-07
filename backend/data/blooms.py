@@ -261,3 +261,93 @@ def get_reblooms_for_user(username: str, *, limit: Optional[int] = None) -> List
                 )
             )
     return reblooms_list
+
+
+def get_timeline_blooms(follower_user_id: int, *, limit: Optional[int] = None) -> List[Bloom]:
+    with db_cursor() as cur:
+        kwargs = {"follower_user_id": follower_user_id}
+        limit_clause = make_limit_clause(limit, kwargs)
+        
+        cur.execute(
+            f"""(
+                SELECT
+                  blooms.id,
+                  sender_user.username as sender_username,
+                  blooms.content,
+                  blooms.send_timestamp as sent_timestamp,
+                  NULL::text as original_sender_username,
+                  NULL::text as rebloomer_username,
+                  (SELECT COUNT(*) FROM reblooms WHERE reblooms.original_bloom_id = blooms.id) as rebloom_count
+                FROM blooms
+                INNER JOIN users sender_user ON blooms.sender_id = sender_user.id
+                INNER JOIN follows ON follows.followee = sender_user.id
+                WHERE follows.follower = %(follower_user_id)s
+            )
+            UNION ALL
+            (
+                SELECT
+                  blooms.id,
+                  rebloomer_user.username as sender_username,
+                  blooms.content,
+                  reblooms.rebloom_timestamp as sent_timestamp,
+                  original_sender_user.username as original_sender_username,
+                  rebloomer_user.username as rebloomer_username,
+                  (SELECT COUNT(*) FROM reblooms r2 WHERE r2.original_bloom_id = blooms.id) as rebloom_count
+                FROM reblooms
+                INNER JOIN blooms ON reblooms.original_bloom_id = blooms.id
+                INNER JOIN users rebloomer_user ON reblooms.rebloomer_id = rebloomer_user.id
+                INNER JOIN users original_sender_user ON blooms.sender_id = original_sender_user.id
+                INNER JOIN follows ON follows.followee = rebloomer_user.id
+                WHERE follows.follower = %(follower_user_id)s
+            )
+            UNION ALL
+            (
+                SELECT
+                  blooms.id,
+                  sender_user.username as sender_username,
+                  blooms.content,
+                  blooms.send_timestamp as sent_timestamp,
+                  NULL::text as original_sender_username,
+                  NULL::text as rebloomer_username,
+                  (SELECT COUNT(*) FROM reblooms WHERE reblooms.original_bloom_id = blooms.id) as rebloom_count
+                FROM blooms
+                INNER JOIN users sender_user ON blooms.sender_id = sender_user.id
+                WHERE sender_user.id = %(follower_user_id)s
+            )
+            UNION ALL
+            (
+                SELECT
+                  blooms.id,
+                  rebloomer_user.username as sender_username,
+                  blooms.content,
+                  reblooms.rebloom_timestamp as sent_timestamp,
+                  original_sender_user.username as original_sender_username,
+                  rebloomer_user.username as rebloomer_username,
+                  (SELECT COUNT(*) FROM reblooms r2 WHERE r2.original_bloom_id = blooms.id) as rebloom_count
+                FROM reblooms
+                INNER JOIN blooms ON reblooms.original_bloom_id = blooms.id
+                INNER JOIN users rebloomer_user ON reblooms.rebloomer_id = rebloomer_user.id
+                INNER JOIN users original_sender_user ON blooms.sender_id = original_sender_user.id
+                WHERE rebloomer_user.id = %(follower_user_id)s
+            )
+            ORDER BY sent_timestamp DESC
+            {limit_clause}
+            """,
+            kwargs,
+        )
+        rows = cur.fetchall()
+        blooms_list = []
+        for row in rows:
+            bloom_id, sender_username, content, timestamp, original_sender_username, rebloomer_username, rebloom_count = row
+            blooms_list.append(
+                Bloom(
+                    id=bloom_id,
+                    sender=sender_username,
+                    content=content,
+                    sent_timestamp=timestamp,
+                    original_sender=original_sender_username,
+                    rebloomer=rebloomer_username,
+                    rebloom_count=rebloom_count or 0,
+                )
+            )
+    return blooms_list
